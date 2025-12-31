@@ -1,0 +1,15 @@
+node_modules
+uploads
+/winston
+.env
+yarn-error.log
+.DS_Store
+.vscode
+dist
+coverage
+*.log
+npm-debug.log*
+.idea
+*.iml
+.cache
+yarn.lock
