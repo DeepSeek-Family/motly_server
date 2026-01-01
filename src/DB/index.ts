@@ -5,13 +5,12 @@ import { USER_ROLES } from "../enums/user";
 import { logger } from "../shared/logger";
 
 const superUser = {
-  firstName: "Super",
-  lastName: "Admin",
+  name: "SUPER ADMIN",
   role: USER_ROLES.SUPER_ADMIN,
-  email: config.admin.email,
-  password: config.admin.password,
-  confirmPassword: config.admin.password,
-  
+  email: config?.admin?.email,
+  password: config?.admin?.password,
+  confirmPassword: config?.admin?.password,
+  loginWith: "email",
   verified: true,
 };
 
@@ -25,5 +24,4 @@ const seedSuperAdmin = async () => {
     logger.info(colors.green("✔ Super admin created successfully!"));
   }
 };
-
 export default seedSuperAdmin;

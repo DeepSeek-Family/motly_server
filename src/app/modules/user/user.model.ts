@@ -161,10 +161,14 @@ userSchema.pre("save", async function (next) {
   if (isExist) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Email already exist!");
   }
-
   //password hash
   this.password = await bcrypt.hash(
     this.password,
+    Number(config.bcrypt_salt_rounds)
+  );
+  // confirm password hash
+  this.confirmPassword = await bcrypt.hash(
+    this.confirmPassword,
     Number(config.bcrypt_salt_rounds)
   );
   next();

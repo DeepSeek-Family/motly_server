@@ -36,8 +36,9 @@ export default {
     facebook_client_secret: process.env.FACEBOOK_CLIENT_SECRET,
   },
   admin: {
-    email: process.env.ADMIN_EMAIL,
-    password: process.env.ADMIN_PASSWORD,
+    email: process.env.SUPER_ADMIN_EMAIL,
+    password: process.env.SUPER_ADMIN_PASSWORD,
+    confirmPassword: process.env.CONFIRM_PASSWORD,
   },
   twilio: {
     accountSid: process.env.TWILIO_ACCOUNT_SID,

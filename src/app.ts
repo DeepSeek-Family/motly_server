@@ -40,6 +40,7 @@ app.use("/api/v1", router);
 app.get("/", (_req: Request, res: Response) => {
   res.send("Hey Backend, How can I assist you ");
 });
+
 app.get("/health", (_req: Request, res: Response) => {
   res.sendFile("health.html", { root: "public" });
 });

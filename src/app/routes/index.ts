@@ -1,11 +1,13 @@
 import express from "express";
 import { UserRoutes } from "../modules/user/user.routes";
 import { AuthRoutes } from "../modules/auth/auth.routes";
+import carRoute from "../modules/car/car.routes";
 const router = express.Router();
 
 const apiRoutes = [
   { path: "/user", route: UserRoutes },
   { path: "/auth", route: AuthRoutes },
+  { path: "/car", route: carRoute },
 ];
 
 apiRoutes.forEach((route) => router.use(route?.path, route?.route));

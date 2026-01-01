@@ -17,10 +17,8 @@ let server: any;
 
 async function main() {
   try {
-
     // create super admin
-    // seedSuperAdmin();
-
+    seedSuperAdmin();
     await mongoose.connect(config.database_url as string);
     logger.info(colors.green("🚀 Database connected successfully"));
     const port =
