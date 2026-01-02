@@ -5,6 +5,11 @@ import { USER_ROLES } from "../../../enums/user";
 import ApiError from "../../../errors/ApiErrors";
 import { StatusCodes } from "http-status-codes";
 import QueryBuilder from "../../builder/QueryBuilder";
+import {
+  clearCarIdsCache,
+  getCachedCarIds,
+} from "../../../util/getCachedCarIds";
+import { redisGet, redisSet } from "../../../helpers/redisHelper";
 
 /**
  * create car service:
@@ -21,27 +26,59 @@ const createCarServiceIntoDB = async (payload: ICar, user: JwtPayload) => {
 
   const result = await CarModel.create(payload);
 
+  // Update Redis cache after creation
+  await clearCarIdsCache(user.id);
+
   return result;
 };
 
 /**
  * for public route
  * */
-const getAllCarsFromDB = async (query: Record<string, any>) => {
-  const qb = new QueryBuilder(CarModel.find(), query)
-    .partialSearch(["name", "description", "class", "transmission", "fuelType", ])
+const getAllCarsFromDB = async (
+  query: Record<string, any>,
+  user?: JwtPayload
+) => {
+  const isMyCarsView = query.view === "my" && user;
+  const userId = isMyCarsView ? user.id : undefined;
+
+  // Get cached IDs from Redis
+  const carIds = await getCachedCarIds(userId);
+
+  // Slice IDs for pagination
+  const page = Number(query.page) || 1;
+  const limit = Number(query.limit) || 10;
+  const start = (page - 1) * limit;
+  const end = page * limit;
+  const paginatedIds = carIds.slice(start, end);
+
+  // Use QueryBuilder for sorting, fields, populate
+  const qb = new QueryBuilder(
+    CarModel.find({ _id: { $in: paginatedIds } }),
+    query
+  )
     .sort()
-    .paginate()
     .fields()
-    .populate(["user"], { user: "name email image" });
+    .partialSearch(["name", "description", "class", "transmission", "fuelType"])
+    .populate(["user"], { user: "name email image" }); // only required fields
 
-  const [data, pagination] = await Promise.all([
-    qb.modelQuery.exec(),
-    qb.getPaginationInfo(),
-  ]);
+  const [data] = await Promise.all([qb.modelQuery.exec()]);
 
-  return { data, pagination };
+  return {
+    data,
+    pagination: {
+      total: carIds.length,
+      page,
+      limit,
+      totalPage: Math.ceil(carIds.length / limit),
+    },
+  };
 };
+
+/**
+ * Private route
+ *
+ * */
 
 /**
  * Find car by id and update service in DB
@@ -69,19 +106,59 @@ const updateCarServiceInDB = async (
   payload: ICar,
   user: JwtPayload
 ) => {
-  if (user.role !== USER_ROLES.SUPER_ADMIN && user.role !== USER_ROLES.AGENCY) {
+  if (![USER_ROLES.SUPER_ADMIN, USER_ROLES.AGENCY].includes(user.role)) {
     throw new ApiError(StatusCodes.UNAUTHORIZED, "You are not authorized");
   }
+
   const result = await CarModel.findByIdAndUpdate(id, payload, { new: true });
+  if (result) await clearCarIdsCache(result.user.toString());
   return result;
 };
 
 const deleteCarServiceInDB = async (id: string, user: JwtPayload) => {
-  if (user.role !== USER_ROLES.SUPER_ADMIN && user.role !== USER_ROLES.AGENCY) {
+  if (![USER_ROLES.SUPER_ADMIN, USER_ROLES.AGENCY].includes(user.role)) {
     throw new ApiError(StatusCodes.UNAUTHORIZED, "You are not authorized");
   }
+
   const result = await CarModel.findByIdAndDelete(id);
+  if (result) await clearCarIdsCache(result.user.toString());
   return result;
+};
+
+// get all data base on user
+const getAllUserCarsDataFromDB = async (
+  query: Record<string, any>,
+  user: JwtPayload
+) => {
+  const carIds = await getCachedCarIds(user.id);
+
+  // Pagination
+  const page = Number(query.page) || 1;
+  const limit = Number(query.limit) || 10;
+  const start = (page - 1) * limit;
+  const end = page * limit;
+  const paginatedIds = carIds.slice(start, end);
+
+  // QueryBuilder for sorting, fields, populate
+  const qb = new QueryBuilder(
+    CarModel.find({ _id: { $in: paginatedIds } }),
+    query
+  )
+    .sort()
+    .fields()
+    .populate(["user"], { user: "name email image" });
+
+  const [data] = await Promise.all([qb.modelQuery.exec()]);
+
+  return {
+    data,
+    pagination: {
+      total: carIds.length,
+      page,
+      limit,
+      totalPage: Math.ceil(carIds.length / limit),
+    },
+  };
 };
 
 export const CarService = {
@@ -90,4 +167,5 @@ export const CarService = {
   findCarFromDBById,
   updateCarServiceInDB,
   deleteCarServiceInDB,
+  getAllUserCarsDataFromDB,
 };

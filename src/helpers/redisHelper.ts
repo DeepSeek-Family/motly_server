@@ -1,36 +1,24 @@
 import { redisClient } from "../config/redis.client";
 
-const redisSet = async (
-  key: string,
-  value: string,
-  ttl: number = 60,
-  query: Record<string, any>
-) => {
-  const queryString = new URLSearchParams(
-    query as Record<string, string>
-  ).toString();
-  const result = await redisClient.set(`${key}?${queryString}`,JSON.stringify(value),"EX",ttl
-  );
+// Set simple key with TTL
+const redisSet = async (key: string, value: any, expireTime: number = 300) => {
+  await redisClient.set(key, JSON.stringify(value), "EX", expireTime);
 };
 
-const redisGet = async (key: string, query: Record<string, any>) => {
-  const queryString = new URLSearchParams(
-    query as Record<string, string>
-  ).toString();
-  const data = JSON.parse(
-    (await redisClient.get(`${key}:${queryString}`)) || "[]"
-  );
-  if (Array.isArray(data) && !data.length) {
-    return null;
+// Get value by key
+const redisGet = async (key: string) => {
+  const data = await redisClient.get(key);
+
+  if (data) {
+    console.log(`🟢 REDIS HIT → ${key}`);
+    return JSON.parse(data);
   }
-
-  return data;
+  console.log(`🔴 REDIS MISS → ${key}`);
+  return null;
+};
+// Delete key
+const redisDel = async (key: string) => {
+  await redisClient.del(key);
 };
 
-const redisHset = async () => {};
-
-const redisHget = async () => {};
-
-const keyDelete = async () => {};
-
-const HKeyDelete = async () => {};
+export { redisSet, redisGet, redisDel };

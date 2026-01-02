@@ -49,5 +49,9 @@ export default {
   elasticSearchIndex: {
     carIndex: process.env.ELASTICSEARCH_CAR_INDEX,
   },
+  // redis
+  redisHost: {
+    redisIP: process.env.redisIP,
+  },
   ISSUER: process.env.ISSUER,
 };

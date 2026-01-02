@@ -33,6 +33,13 @@ carRoute
   .get(CarController.getAllCar);
 
 carRoute
+  .route("/for-user")
+  .get(
+    auth(USER_ROLES.AGENCY, USER_ROLES.SUPER_ADMIN),
+    CarController.getAllUserCarsData
+  );
+
+carRoute
   .route("/:id")
   /**
    * for get car by id

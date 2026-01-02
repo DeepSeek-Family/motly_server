@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import catchAsync from "../../../shared/catchAsync";
 import { CarService } from "./car.service";
 import sendResponse from "../../../shared/sendResponse";
+import { StatusCodes } from "http-status-codes";
 
 const createCar = catchAsync(async (req: Request, res: Response) => {
   const result = await CarService.createCarServiceIntoDB(req.body, req.user!);
@@ -62,10 +63,25 @@ const deleteCar = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAllUserCarsData = catchAsync(async (req: Request, res: Response) => {
+  const result = await CarService.getAllUserCarsDataFromDB(
+    req.query,
+    req.user!
+  );
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "User's cars retrieved successfully",
+    data: result.data,
+    pagination: result.pagination,
+  });
+});
+
 export const CarController = {
   createCar,
   getAllCar,
   getCarById,
   updateCar,
   deleteCar,
+  getAllUserCarsData,
 };
