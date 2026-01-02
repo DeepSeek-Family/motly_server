@@ -1,4 +1,4 @@
-import { model, Schema, Types } from "mongoose";
+import { model, Schema } from "mongoose";
 import { ICar } from "./car.interface";
 import { carClass } from "../../../enums/carClass";
 import { fuelType } from "../../../enums/fuelType";

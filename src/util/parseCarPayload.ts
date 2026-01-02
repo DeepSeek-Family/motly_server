@@ -96,7 +96,6 @@ const updateParseCarPayload = (
     seats: payload.seats ? Number(payload.seats) : undefined,
     pricePerDay: payload.pricePerDay ? Number(payload.pricePerDay) : undefined,
     kilometers: payload.kilometers ? Number(payload.kilometers) : undefined,
-
     location,
     fuelPolicy: payload.fuelPolicy,
     carImages: carImages && carImages.length > 0 ? carImages : undefined,
@@ -108,7 +107,6 @@ const updateParseCarPayload = (
         ? true
         : false;
   }
-
   return parsedPayload;
 };
 
