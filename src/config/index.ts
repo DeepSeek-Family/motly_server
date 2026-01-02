@@ -45,5 +45,9 @@ export default {
     authToken: process.env.TWILIO_AUTH_TOKEN,
     twilioNumber: process.env.TWILIO_NUMBER,
   },
+  // elasticsearch
+  elasticSearchIndex: {
+    carIndex: process.env.ELASTICSEARCH_CAR_INDEX,
+  },
   ISSUER: process.env.ISSUER,
 };

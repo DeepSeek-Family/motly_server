@@ -4,9 +4,6 @@ import { carClass } from "../../../enums/carClass";
 import { fuelType } from "../../../enums/fuelType";
 import { bookingStatus } from "../../../enums/bookingStatus";
 import { paymentStatus } from "../../../enums/paymentStatus";
-import { CAR_INDEX } from "../../../handlers/elasticSearch.helper";
-import { esClient } from "../../../config/elasticSearch";
-import { logger } from "../../../shared/logger";
 
 const carModelSchema = new Schema<ICar>(
   {
@@ -53,7 +50,6 @@ const carModelSchema = new Schema<ICar>(
         required: true,
       },
     },
-
     fuelPolicy: {
       type: String,
       enum: Object.values(fuelType),
@@ -91,5 +87,8 @@ const carModelSchema = new Schema<ICar>(
   },
   { timestamps: true }
 );
+
+// for geo location
+carModelSchema.index({ location: "2dsphere" });
 
 export const CarModel = model<ICar>("CarList", carModelSchema);
