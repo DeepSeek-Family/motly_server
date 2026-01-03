@@ -26,5 +26,6 @@ export interface ICar {
   rating?: number;
   description?: string;
   insurance?: string;
+  carAccessories?: Types.ObjectId[];
   user: Types.ObjectId;
 }

@@ -91,6 +91,12 @@ const carModelSchema = new Schema<ICar>(
       type: String,
       required: false,
     },
+    carAccessories: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "CarAccessories",
+      },
+    ],
     user: {
       type: Schema.Types.ObjectId,
       ref: "User",
