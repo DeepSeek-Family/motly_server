@@ -36,11 +36,10 @@ const createUserToDB = async (payload: Partial<IUser>): Promise<IUser> => {
   if (!createUser) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create user");
   }
-
   //send email
   const otp = generateOTP();
   const values = {
-    name: createUser.firstName! + " " + createUser.lastName!,
+    name: createUser.name,
     otp: otp,
     email: createUser.email!,
   };

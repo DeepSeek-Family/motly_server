@@ -13,3 +13,4 @@ npm-debug.log*
 *.iml
 .cache
 yarn.lock
+createModuleStructure.js

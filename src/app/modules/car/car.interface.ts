@@ -25,5 +25,6 @@ export interface ICar {
   paymentStatus: paymentStatus;
   rating?: number;
   description?: string;
+  insurance?: string;
   user: Types.ObjectId;
 }

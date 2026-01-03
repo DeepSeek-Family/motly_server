@@ -79,6 +79,18 @@ const carModelSchema = new Schema<ICar>(
       default: paymentStatus.Pending,
       required: true,
     },
+    rating: {
+      type: Number,
+      required: false,
+    },
+    description: {
+      type: String,
+      required: false,
+    },
+    insurance: {
+      type: String,
+      required: false,
+    },
     user: {
       type: Schema.Types.ObjectId,
       ref: "User",
