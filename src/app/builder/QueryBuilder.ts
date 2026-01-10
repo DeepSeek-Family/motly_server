@@ -15,14 +15,28 @@ class QueryBuilder<T> {
       this.modelQuery = this.modelQuery.find({
         $or: searchableFields.map(
           (field) =>
-            ({
-              [field]: {
-                $regex: this.query.searchTerm,
-                $options: "i",
-              },
-            } as FilterQuery<T>)
+          ({
+            [field]: {
+              $regex: this.query.searchTerm,
+              $options: "i",
+            },
+          } as FilterQuery<T>)
         ),
       });
+    }
+    return this;
+  }
+
+
+  geoFilter(lat?: number, lon?: number, radiusInKm?: number) {
+    if (lat !== undefined && lon !== undefined && radiusInKm) {
+      // Convert km to radians for $centerSphere
+      const radiusInRadians = radiusInKm / 6378.1; // Earth radius in km
+      this.modelQuery = this.modelQuery.find({
+        location: {
+          $geoWithin: { $centerSphere: [[lon, lat], radiusInRadians] }, // [lon, lat]
+        },
+      } as FilterQuery<T>);
     }
     return this;
   }
@@ -68,18 +82,18 @@ class QueryBuilder<T> {
 
   // array field filtering
   arrayFields(alwaysInclude: string[] = []) {
-  const fields = this.query.fields
-    ? (this.query.fields as string).split(",").join(" ")
-    : "";
+    const fields = this.query.fields
+      ? (this.query.fields as string).split(",").join(" ")
+      : "";
 
-  const mandatory = alwaysInclude.join(" ");
+    const mandatory = alwaysInclude.join(" ");
 
-  this.modelQuery = this.modelQuery.select(
-    `${fields} ${mandatory}`.trim()
-  );
+    this.modelQuery = this.modelQuery.select(
+      `${fields} ${mandatory}`.trim()
+    );
 
-  return this;
-}
+    return this;
+  }
 
 
   //populating

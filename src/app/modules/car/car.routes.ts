@@ -5,7 +5,7 @@ import { CarController } from "./car.controller";
 import validateRequest from "../../middlewares/validateRequest";
 import { CarValidation } from "./car.validation";
 import fileUploadHandler from "../../middlewares/fileUploaderHandler";
-import { parseCarPayloadForDB } from "../../../util/parseCarPayload";
+import { parseCarPayload } from "../../../util/parseCarPayload";
 
 const carRoute = Router();
 
@@ -19,7 +19,7 @@ carRoute
     fileUploadHandler() as any,
     async (req: Request, _res: Response, next: NextFunction) => {
       try {
-        req.body = parseCarPayloadForDB.create(req);
+        req.body = parseCarPayload(req);
         next();
       } catch (error) {
         console.log(error);
@@ -56,7 +56,7 @@ carRoute
     fileUploadHandler() as any,
     async (req: Request, _res: Response, next: NextFunction) => {
       try {
-        req.body = parseCarPayloadForDB.update(req);
+        req.body = parseCarPayload(req);
         next();
       } catch (error) {
         console.log(error);

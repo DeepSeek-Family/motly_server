@@ -31,44 +31,36 @@ const getAllCarsFromDB = async (
   query: Record<string, any>,
   user?: JwtPayload
 ) => {
-  const isMyCarsView = query.view === "my" && user;
-  const userId = isMyCarsView ? user.id : undefined;
-
-  // Get cached IDs from Redis
-  const carIds = await getCachedCarIds(userId);
-
-  // Slice IDs for pagination
-  const page = Number(query.page) || 1;
-  const limit = Number(query.limit) || 10;
-  const start = (page - 1) * limit;
-  const end = page * limit;
-  const paginatedIds = carIds.slice(start, end);
-
-  // Use QueryBuilder for sorting, fields, populate
   const qb = new QueryBuilder(
-    CarModel.find({ _id: { $in: paginatedIds } })
-      .populate("user", "name email image")
-      .populate("carAccessories", "name icon"),
+    CarModel.find(),
     query
   )
     .sort()
-    // .arrayFields(["carAccessories", "user"])
     .partialSearch(["name", "description", "class", "transmission", "fuelType"])
-    .populate(["user", "carAccessories"], {
-      user: "name email image",
-      carAccessories: "name icon",
-    }); // only required fields
+    .populate(
+      ["user"],
+      {
+        user: "name email image",
+      }
+    );
 
-  const [data] = await Promise.all([qb.modelQuery.exec()]);
+
+
+  if (query.lat && query.lon && query.radius) {
+    const lat = parseFloat(query.lat as string);
+    const lon = parseFloat(query.lon as string);
+    const radius = parseFloat(query.radius as string);
+    qb.geoFilter(lat, lon, radius);
+  }
+
+  const [data, pagination] = await Promise.all([
+    qb.modelQuery.exec(),
+    qb.getPaginationInfo(),
+  ]);
 
   return {
     data,
-    pagination: {
-      total: carIds.length,
-      page,
-      limit,
-      totalPage: Math.ceil(carIds.length / limit),
-    },
+    pagination,
   };
 };
 
@@ -82,11 +74,7 @@ const getAllCarsFromDB = async (
  * */
 
 const findCarFromDBById = async (id: string) => {
-  const car = await CarModel.findById(id).populate("user", {
-    name: 1,
-    email: 1,
-    image: 1,
-  });
+  const car = await CarModel.findById(id).populate("user", "name email image");
   if (!car) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Car not found");
   }
@@ -129,32 +117,22 @@ const getAllUserCarsDataFromDB = async (
 ) => {
   const carIds = await getCachedCarIds(user.id);
 
-  // Pagination
-  const page = Number(query.page) || 1;
-  const limit = Number(query.limit) || 10;
-  const start = (page - 1) * limit;
-  const end = page * limit;
-  const paginatedIds = carIds.slice(start, end);
-
-  // QueryBuilder for sorting, fields, populate
   const qb = new QueryBuilder(
-    CarModel.find({ _id: { $in: paginatedIds } }),
+    CarModel.find({ _id: { $in: carIds } }),
     query
   )
     .sort()
     .fields()
     .populate(["user"], { user: "name email image" });
 
-  const [data] = await Promise.all([qb.modelQuery.exec()]);
+  const [data, pagination] = await Promise.all([
+    qb.modelQuery.exec(),
+    qb.getPaginationInfo(),
+  ]);
 
   return {
     data,
-    pagination: {
-      total: carIds.length,
-      page,
-      limit,
-      totalPage: Math.ceil(carIds.length / limit),
-    },
+    pagination,
   };
 };
 

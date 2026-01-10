@@ -8,10 +8,13 @@ import { IErrorMessage } from "../../types/errors.types";
 import { StatusCodes } from "http-status-codes";
 
 const globalErrorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
-  // config.node_env === "development"
-  //   ? console.log("🚨 globalErrorHandler", error)
-  //   : errorLogger.error("🚨 globalErrorHandler", error);
-  console.log("🚨 globalErrorHandler", error)
+  config.node_env === "development"
+    ? console.log("🚨 globalErrorHandler", {
+      name: error?.name,
+      message: error?.message,
+      stack: error?.stack,
+    })
+    : errorLogger.error("🚨 globalErrorHandler", error);
   let statusCode = 500;
   let message = "Something went wrong";
   let errorMessages: IErrorMessage[] = [];

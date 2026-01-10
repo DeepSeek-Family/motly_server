@@ -1,117 +1,62 @@
 import { Request } from "express";
 import { getMultipleFilesPath } from "../shared/getFilePath";
-import ApiError from "../errors/ApiErrors";
-import { StatusCodes } from "http-status-codes";
+import { carClass } from "../enums/carClass";
+import { fuelType } from "../enums/fuelType";
+import { bookingStatus } from "../enums/bookingStatus";
+import { transmission } from "../types/transmission";
 
-interface IParseCarPayloadOptions {
-  filesFieldName?: string;
-}
-
-const parseCarPayload = (
-  req: Request,
-  options: IParseCarPayloadOptions = {}
-) => {
-  const payload = req.body;
-  const filesFieldName = options.filesFieldName || "carImages";
-  if (!filesFieldName) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      `${filesFieldName} is required`
-    );
-  }
-  // Parse uploaded images
-  const carImages = getMultipleFilesPath(req.files, filesFieldName as any);
+export const parseCarPayload = (req: Request) => {
+  const { body } = req;
+  const carImages = getMultipleFilesPath(req.files, "carImages");
 
   // Parse location
-  let location;
-  if (payload.location) {
-    location =
-      typeof payload.location === "string"
-        ? JSON.parse(payload.location)
-        : payload.location;
+  let lat: number | undefined;
+  let lon: number | undefined;
 
-    if (location) {
-      location.lat = Number(location.lat);
-      location.lon = Number(location.lon);
+  if (body.location) {
+    try {
+      const locationObj =
+        typeof body.location === "string"
+          ? JSON.parse(body.location)
+          : body.location;
+
+      lat = parseFloat(locationObj.lat);
+      lon = parseFloat(locationObj.lon);
+    } catch (error) {
+      throw new Error(
+        "Invalid location format. 'location' must be a valid JSON with 'lat' and 'lon'."
+      );
     }
   }
 
-  // Build parsed payload
-  const parsedPayload = {
-    ...payload,
-    doors: payload.doors ? Number(payload.doors) : undefined,
-    suitcases: payload.suitcases ? Number(payload.suitcases) : undefined,
-    seats: payload.seats ? Number(payload.seats) : undefined,
-    pricePerDay: payload.pricePerDay ? Number(payload.pricePerDay) : undefined,
-    kilometers: payload.kilometers ? Number(payload.kilometers) : undefined,
-    airCondition:
-      payload.airCondition === "true" || payload.airCondition === true
-        ? true
-        : false,
-    location,
-    fuelPolicy: payload.fuelPolicy,
-    carImages: carImages && carImages.length > 0 ? carImages : undefined,
-    milegLimit: Number(payload.milegLimit),
-    user: req.user?.id,
-  };
-
-  return parsedPayload;
-};
-
-const updateParseCarPayload = (
-  req: Request,
-  options: IParseCarPayloadOptions = {}
-) => {
-  const payload = req.body;
-  const filesFieldName = options.filesFieldName || "carImages";
-  if (!filesFieldName) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      `${filesFieldName} is required`
+  if (lat === undefined || lon === undefined || isNaN(lat) || isNaN(lon)) {
+    throw new Error(
+      "Invalid location coordinates. Please provide valid 'lat' and 'lon' numbers."
     );
   }
 
-  // Parse uploaded images
-  const carImages = getMultipleFilesPath(req.files, filesFieldName as any);
-  // Parse location
-  let location;
-  if (payload.location) {
-    location =
-      typeof payload.location === "string"
-        ? JSON.parse(payload.location)
-        : payload.location;
-
-    if (location) {
-      location.lat = Number(location.lat);
-      location.lon = Number(location.lon);
-    }
-  }
-
-  // Build parsed payload
-  const parsedPayload = {
-    ...payload,
-    doors: payload.doors ? Number(payload.doors) : undefined,
-    suitcases: payload.suitcases ? Number(payload.suitcases) : undefined,
-    seats: payload.seats ? Number(payload.seats) : undefined,
-    pricePerDay: payload.pricePerDay ? Number(payload.pricePerDay) : undefined,
-    kilometers: payload.kilometers ? Number(payload.kilometers) : undefined,
-    location,
-    fuelPolicy: payload.fuelPolicy,
-
-    carImages: carImages && carImages.length > 0 ? carImages : undefined,
-    milegLimit: Number(payload.milegLimit),
-    user: req.user?.id,
+  const geoLocation = {
+    type: "Point",
+    coordinates: [lon, lat], // MongoDB expects [longitude, latitude]
   };
-  if ("airCondition" in payload) {
-    parsedPayload.airCondition =
-      payload.airCondition === "true" || payload.airCondition === true
-        ? true
-        : false;
-  }
-  return parsedPayload;
-};
 
-export const parseCarPayloadForDB = {
-  create: parseCarPayload,
-  update: updateParseCarPayload,
+  return {
+    name: body.name,
+    class: body.class as carClass,
+    doors: Number(body.doors),
+    seats: Number(body.seats),
+    suitcases: Number(body.suitcases),
+    transmission: body.transmission as transmission,
+    airCondition: body.airCondition === "true" || body.airCondition === true,
+    fuelPolicy: body.fuelPolicy as fuelType,
+    kilometers: Number(body.kilometers),
+    description: body.description,
+    pricePerDay: Number(body.pricePerDay),
+    bookingStatus: body.bookingStatus || bookingStatus.Pending,
+    location: geoLocation, // GeoJSON
+    carImages,
+    rating: body.rating ? Number(body.rating) : undefined,
+    insurance: body.insurance,
+    milegLimit: body.milegLimit ? Number(body.milegLimit) : 0,
+  };
 };

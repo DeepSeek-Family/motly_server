@@ -7,7 +7,7 @@ import { StatusCodes } from "http-status-codes";
 const createCar = catchAsync(async (req: Request, res: Response) => {
   const result = await CarService.createCarServiceIntoDB(req.body, req.user!);
   sendResponse(res, {
-    statusCode: 201,
+    statusCode: StatusCodes.CREATED,
     success: true,
     message: "Car created successfully",
     data: result,
@@ -18,7 +18,7 @@ const createCar = catchAsync(async (req: Request, res: Response) => {
 const getAllCar = catchAsync(async (req: Request, res: Response) => {
   const result = await CarService.getAllCarsFromDB(req.query);
   sendResponse(res, {
-    statusCode: 200,
+    statusCode: StatusCodes.OK,
     success: true,
     message: "Cars retrieved successfully",
     pagination: result.pagination,
@@ -29,7 +29,7 @@ const getAllCar = catchAsync(async (req: Request, res: Response) => {
 const getCarById = catchAsync(async (req: Request, res: Response) => {
   const result = await CarService.findCarFromDBById(req.params.id);
   sendResponse(res, {
-    statusCode: 200,
+    statusCode: StatusCodes.OK,
     success: true,
     message: "Car retrieved successfully",
     data: result,
@@ -43,7 +43,7 @@ const updateCar = catchAsync(async (req: Request, res: Response) => {
     req.user!
   );
   sendResponse(res, {
-    statusCode: 200,
+    statusCode: StatusCodes.OK,
     success: true,
     message: "Car updated successfully",
     data: result,
@@ -56,7 +56,7 @@ const deleteCar = catchAsync(async (req: Request, res: Response) => {
     req.user!
   );
   sendResponse(res, {
-    statusCode: 200,
+    statusCode: StatusCodes.OK,
     success: true,
     message: "Car deleted successfully",
     data: result,

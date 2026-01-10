@@ -78,17 +78,25 @@ const carModelSchema = new Schema<ICar>(
       default: bookingStatus.Pending,
       required: true,
     },
-
     location: {
-      lat: {
-        type: Number,
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: "Point",
         required: true,
       },
-      lon: {
-        type: Number,
+      coordinates: {
+        type: [Number],
         required: true,
+        validate: {
+          validator: function (value: number[]) {
+            return value.length === 2;
+          },
+          message: "Coordinates must be an array of [longitude, latitude]",
+        },
       },
     },
+
     fuelPolicy: {
       type: String,
       enum: Object.values(fuelType),
@@ -121,10 +129,10 @@ const carModelSchema = new Schema<ICar>(
     },
     milegLimit: {
       type: Number,
-      enum: Object.values(MileageEnum),
+      enum: [0, 150, 200, 300, 400],
       required: true,
       default: 0,
-    },
+    } as any,
   },
   { timestamps: true }
 );

@@ -17,8 +17,8 @@ export interface ICar {
   description?: string;
   pricePerDay: number;
   location: {
-    lat: number;
-    lon: number;
+    type: string;
+    coordinates: number[];
   };
   carImages: string[];
   bookingStatus: bookingStatus;
