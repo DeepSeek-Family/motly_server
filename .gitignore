@@ -1,10 +1,8 @@
 node_modules
 uploads
 /winston
-.env
 yarn-error.log
 .DS_Store
-.vscode
 dist
 coverage
 *.log
@@ -14,3 +12,4 @@ npm-debug.log*
 .cache
 yarn.lock
 createModuleStructure.js
+config.bat

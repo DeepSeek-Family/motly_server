@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "main": "app.ts",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "start": "node dist/server.js",
+    "dev": "node api.js && ts-node-dev --respawn --transpile-only src/server.ts",
+    "start": "node api.js && node dist/server.js",
     "format": "prettier . --write",
-    "build": "tsc",
+    "build": "node api.js && tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Abdur Razzak",
@@ -45,6 +45,7 @@
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
     "node-cron": "^3.0.3",
+    "node-fetch": "^3.3.2",
     "nodemailer": "^6.9.15",
     "passport": "^0.7.0",
     "passport-facebook": "^3.0.0",

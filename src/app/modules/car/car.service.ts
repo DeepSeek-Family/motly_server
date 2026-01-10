@@ -5,7 +5,6 @@ import { USER_ROLES } from "../../../enums/user";
 import ApiError from "../../../errors/ApiErrors";
 import { StatusCodes } from "http-status-codes";
 import QueryBuilder from "../../builder/QueryBuilder";
-import { clearCarIdsCache, getCachedCarIds } from "../../../util/getCachedCarIds";
 
 
 /**
@@ -21,7 +20,7 @@ const createCarServiceIntoDB = async (payload: ICar, user: JwtPayload) => {
   }
   payload.user = user.id;
   const result = await CarModel.create(payload);
-  return result;
+  return result.toObject();
 };
 
 /**
@@ -32,7 +31,7 @@ const getAllCarsFromDB = async (
   user?: JwtPayload
 ) => {
   const qb = new QueryBuilder(
-    CarModel.find(),
+    CarModel.find().lean(),
     query
   )
     .sort()
@@ -40,12 +39,9 @@ const getAllCarsFromDB = async (
     .populate(
       ["user"],
       {
-        user: "name email image",
+        user: "name email",
       }
     );
-
-
-
   if (query.lat && query.lon && query.radius) {
     const lat = parseFloat(query.lat as string);
     const lon = parseFloat(query.lon as string);
@@ -74,7 +70,7 @@ const getAllCarsFromDB = async (
  * */
 
 const findCarFromDBById = async (id: string) => {
-  const car = await CarModel.findById(id).populate("user", "name email image");
+  const car = await CarModel.findById(id).populate("user", "name email").lean();
   if (!car) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Car not found");
   }
@@ -86,27 +82,25 @@ const findCarFromDBById = async (id: string) => {
  *  1.
  * */
 
-const updateCarServiceInDB = async (
-  id: string,
-  payload: ICar,
-  user: JwtPayload
-) => {
+const updateCarServiceInDB = async (id: string, payload: ICar, user: JwtPayload) => {
   if (![USER_ROLES.SUPER_ADMIN, USER_ROLES.AGENCY].includes(user.role)) {
     throw new ApiError(StatusCodes.UNAUTHORIZED, "You are not authorized");
   }
 
-  const result = await CarModel.findByIdAndUpdate(id, payload, { new: true });
-  if (result) await clearCarIdsCache(result.user.toString());
+  const result = await CarModel.findByIdAndUpdate(id, payload, { new: true }).lean();
+  if (!result) throw new ApiError(StatusCodes.NOT_FOUND, "Car not found");
   return result;
 };
+
 
 const deleteCarServiceInDB = async (id: string, user: JwtPayload) => {
   if (![USER_ROLES.SUPER_ADMIN, USER_ROLES.AGENCY].includes(user.role)) {
     throw new ApiError(StatusCodes.UNAUTHORIZED, "You are not authorized");
   }
 
-  const result = await CarModel.findByIdAndDelete(id);
-  if (result) await clearCarIdsCache(result.user.toString());
+  const result = await CarModel.findByIdAndDelete(id).lean();
+  if (!result) throw new ApiError(StatusCodes.NOT_FOUND, "Car not found");
+
   return result;
 };
 
@@ -115,25 +109,17 @@ const getAllUserCarsDataFromDB = async (
   query: Record<string, any>,
   user: JwtPayload
 ) => {
-  const carIds = await getCachedCarIds(user.id);
-
-  const qb = new QueryBuilder(
-    CarModel.find({ _id: { $in: carIds } }),
-    query
-  )
+  const qb = new QueryBuilder(CarModel.find({ user: user.id }).lean(), query)
     .sort()
     .fields()
-    .populate(["user"], { user: "name email image" });
+    .populate(["user"], { user: "name email" });
 
   const [data, pagination] = await Promise.all([
     qb.modelQuery.exec(),
     qb.getPaginationInfo(),
   ]);
 
-  return {
-    data,
-    pagination,
-  };
+  return { data, pagination };
 };
 
 export const CarService = {
