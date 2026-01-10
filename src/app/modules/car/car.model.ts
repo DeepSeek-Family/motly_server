@@ -4,6 +4,37 @@ import { carClass } from "../../../enums/carClass";
 import { fuelType } from "../../../enums/fuelType";
 import { bookingStatus } from "../../../enums/bookingStatus";
 import { paymentStatus } from "../../../enums/paymentStatus";
+import { MileageEnum, transmission } from "../../../types/transmission";
+// export interface ICar {
+//   name: string;
+//   class: carClass;
+//   doors: number;
+//   seats: number;
+//   suitcases: number;
+//   transmission: transmission;
+//   airCondition: boolean;
+//   fuelPolicy: fuelType;
+//   kilometers: number;
+//   description?: string;
+//   pricePerDay: number;
+//   bookingDate: Date;
+//   relaseDate: Date;
+//   location: {
+//     lat: number;
+//     lon: number;
+//   };
+
+//   carImages: string[];
+//   bookingStatus: bookingStatus;
+
+//   rating?: number;
+
+//   milegLimit: MileageEnum
+
+//   insurance?: string;
+//   carAccessories?: Types.ObjectId;
+//   user: Types.ObjectId;
+// }
 
 const carModelSchema = new Schema<ICar>(
   {
@@ -20,26 +51,34 @@ const carModelSchema = new Schema<ICar>(
       type: Number,
       required: true,
     },
-    transmission: {
-      type: String,
+    seats: {
+      type: Number,
       required: true,
     },
     suitcases: {
       type: Number,
       required: true,
     },
+
+    transmission: {
+      type: String,
+      enum: Object.values(transmission),
+      required: true,
+    },
+
     airCondition: {
       type: Boolean,
       required: true,
     },
-    seats: {
-      type: Number,
+    pricePerDay: { type: Number, required: true, index: true },
+
+    bookingStatus: {
+      type: String,
+      enum: Object.values(bookingStatus),
+      default: bookingStatus.Pending,
       required: true,
     },
-    pricePerDay: {
-      type: Number,
-      required: true,
-    },
+
     location: {
       lat: {
         type: Number,
@@ -63,22 +102,6 @@ const carModelSchema = new Schema<ICar>(
       type: [String],
       required: true,
     },
-    pickupLocationType: {
-      type: String,
-      required: true,
-    },
-    bookingStatus: {
-      type: String,
-      enum: Object.values(bookingStatus),
-      default: bookingStatus.Pending,
-      required: true,
-    },
-    paymentStatus: {
-      type: String,
-      enum: Object.values(paymentStatus),
-      default: paymentStatus.Pending,
-      required: true,
-    },
     rating: {
       type: Number,
       required: false,
@@ -91,16 +114,16 @@ const carModelSchema = new Schema<ICar>(
       type: String,
       required: false,
     },
-    carAccessories: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "CarAccessories",
-      },
-    ],
     user: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
+    },
+    milegLimit: {
+      type: Number,
+      enum: Object.values(MileageEnum),
+      required: true,
+      default: 0,
     },
   },
   { timestamps: true }

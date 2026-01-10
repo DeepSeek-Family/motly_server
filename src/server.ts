@@ -6,6 +6,7 @@ import colors from "colors";
 import { socketHelper } from "./helpers/socketHelper";
 import { Server } from "socket.io";
 import seedSuperAdmin from "./DB";
+import "../src/app/worker/worker";
 
 //uncaught exception
 process.on("uncaughtException", (error) => {

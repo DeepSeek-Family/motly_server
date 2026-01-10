@@ -65,6 +65,23 @@ class QueryBuilder<T> {
     return this;
   }
 
+
+  // array field filtering
+  arrayFields(alwaysInclude: string[] = []) {
+  const fields = this.query.fields
+    ? (this.query.fields as string).split(",").join(" ")
+    : "";
+
+  const mandatory = alwaysInclude.join(" ");
+
+  this.modelQuery = this.modelQuery.select(
+    `${fields} ${mandatory}`.trim()
+  );
+
+  return this;
+}
+
+
   //populating
   populate(populateFields: string[], selectFields: Record<string, unknown>) {
     this.modelQuery = this.modelQuery.populate(

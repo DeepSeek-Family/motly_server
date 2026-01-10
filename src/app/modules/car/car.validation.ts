@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { carClass } from "../../../enums/carClass";
 import { fuelType } from "../../../enums/fuelType";
-import { bookingStatus } from "../../../enums/bookingStatus";
-import { paymentStatus } from "../../../enums/paymentStatus";
+import { MileageEnum, transmission } from "../../../types/transmission";
 
 const createCarValidation = z.object({
   body: z.object({
@@ -18,7 +17,7 @@ const createCarValidation = z.object({
       })
       .int()
       .positive(),
-    transmission: z.string({
+    transmission: z.nativeEnum(transmission, {
       required_error: "Transmission type is required",
     }),
     suitcases: z
@@ -64,16 +63,13 @@ const createCarValidation = z.object({
       })
       .nonnegative(),
     carImages: z.array(z.string()).min(1, "At least one image is required"),
-    pickupLocationType: z.string({
-      required_error: "Pickup location type is required",
-    }),
     user: z.string({
       required_error: "User ID is required",
     }),
-    bookingStatus: z.nativeEnum(bookingStatus).optional(),
-    paymentStatus: z.nativeEnum(paymentStatus).optional(),
-  }),
+    milegLimit: z.nativeEnum(MileageEnum).optional(),
+  })
 });
+
 
 const updateCarValidation = z.object({
   body: z.object({
@@ -96,8 +92,7 @@ const updateCarValidation = z.object({
     carImages: z.array(z.string()).optional(),
     pickupLocationType: z.string().optional(),
     user: z.string().optional(),
-    bookingStatus: z.nativeEnum(bookingStatus).optional(),
-    paymentStatus: z.nativeEnum(paymentStatus).optional(),
+    milegLimit: z.nativeEnum(MileageEnum).optional(),
   }),
 });
 

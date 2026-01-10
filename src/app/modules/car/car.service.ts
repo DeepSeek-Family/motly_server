@@ -5,11 +5,8 @@ import { USER_ROLES } from "../../../enums/user";
 import ApiError from "../../../errors/ApiErrors";
 import { StatusCodes } from "http-status-codes";
 import QueryBuilder from "../../builder/QueryBuilder";
-import {
-  clearCarIdsCache,
-  getCachedCarIds,
-} from "../../../util/getCachedCarIds";
-import { redisGet, redisSet } from "../../../helpers/redisHelper";
+import { clearCarIdsCache, getCachedCarIds } from "../../../util/getCachedCarIds";
+
 
 /**
  * create car service:
@@ -23,12 +20,7 @@ const createCarServiceIntoDB = async (payload: ICar, user: JwtPayload) => {
     throw new ApiError(StatusCodes.UNAUTHORIZED, "You are not authorized");
   }
   payload.user = user.id;
-
   const result = await CarModel.create(payload);
-
-  // Update Redis cache after creation
-  await clearCarIdsCache(user.id);
-
   return result;
 };
 
@@ -54,13 +46,18 @@ const getAllCarsFromDB = async (
 
   // Use QueryBuilder for sorting, fields, populate
   const qb = new QueryBuilder(
-    CarModel.find({ _id: { $in: paginatedIds } }),
+    CarModel.find({ _id: { $in: paginatedIds } })
+      .populate("user", "name email image")
+      .populate("carAccessories", "name icon"),
     query
   )
     .sort()
-    .fields()
+    // .arrayFields(["carAccessories", "user"])
     .partialSearch(["name", "description", "class", "transmission", "fuelType"])
-    .populate(["user"], { user: "name email image" }); // only required fields
+    .populate(["user", "carAccessories"], {
+      user: "name email image",
+      carAccessories: "name icon",
+    }); // only required fields
 
   const [data] = await Promise.all([qb.modelQuery.exec()]);
 

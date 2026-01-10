@@ -54,4 +54,8 @@ export default {
     redisIP: process.env.redisIP,
   },
   ISSUER: process.env.ISSUER,
+  bullMQ: {
+    host: process.env.BULLMQIP!,
+    port: process.env.BULLMQPORT!,
+  },
 };

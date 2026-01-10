@@ -1,4 +1,3 @@
-// src/utils/parseCarPayload.ts
 import { Request } from "express";
 import { getMultipleFilesPath } from "../shared/getFilePath";
 import ApiError from "../errors/ApiErrors";
@@ -20,7 +19,6 @@ const parseCarPayload = (
       `${filesFieldName} is required`
     );
   }
-
   // Parse uploaded images
   const carImages = getMultipleFilesPath(req.files, filesFieldName as any);
 
@@ -53,6 +51,7 @@ const parseCarPayload = (
     location,
     fuelPolicy: payload.fuelPolicy,
     carImages: carImages && carImages.length > 0 ? carImages : undefined,
+    milegLimit: Number(payload.milegLimit),
     user: req.user?.id,
   };
 
@@ -98,7 +97,9 @@ const updateParseCarPayload = (
     kilometers: payload.kilometers ? Number(payload.kilometers) : undefined,
     location,
     fuelPolicy: payload.fuelPolicy,
+
     carImages: carImages && carImages.length > 0 ? carImages : undefined,
+    milegLimit: Number(payload.milegLimit),
     user: req.user?.id,
   };
   if ("airCondition" in payload) {
