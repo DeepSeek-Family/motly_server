@@ -10,13 +10,7 @@ const router = express.Router();
 router.get(
   "/profile",
   auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.USER),
-  UserController.getUserProfile
-);
-
-router.post(
-  "/create-admin",
-  validateRequest(UserValidation.createAdminZodSchema),
-  UserController.createAdmin
+  UserController.getUserProfile,
 );
 
 router
@@ -24,8 +18,8 @@ router
   .post(UserController.createUser)
   .patch(
     auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.USER),
-    fileUploadHandler(),
-    UserController.updateProfile
+    fileUploadHandler() as any,
+    UserController.updateProfile,
   );
 
 export const UserRoutes = router;

@@ -50,8 +50,13 @@ export default {
     carIndex: process.env.ELASTICSEARCH_CAR_INDEX,
   },
   // redis
+  redis: {
+    host: process.env.REDIS_HOST || process.env.redisIP || "127.0.0.1",
+    port: process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT, 10) : 6379,
+    password: process.env.REDIS_PASSWORD || undefined,
+  },
   redisHost: {
-    redisIP: process.env.redisIP,
+    redisIP: process.env.REDIS_HOST || process.env.redisIP || "127.0.0.1",
   },
   ISSUER: process.env.ISSUER,
   bullMQ: {

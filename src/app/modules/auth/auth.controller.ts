@@ -122,6 +122,7 @@ export const AuthController = {
     changePassword,
     newAccessToken,
     resendVerificationEmail,
+    resendOTP: resendVerificationEmail,
     // socialLogin,
     deleteUser
 };

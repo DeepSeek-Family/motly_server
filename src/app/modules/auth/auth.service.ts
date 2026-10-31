@@ -17,6 +17,7 @@ import generateOTP from "../../../util/generateOTP";
 import { ResetToken } from "../resetToken/resetToken.model";
 import { User } from "../user/user.model";
 import { IUser } from "../user/user.interface";
+import redisService from "../../../redis/redis.service";
 
 //login
 const loginUserFromDB = async (payload: ILoginData) => {
@@ -30,7 +31,7 @@ const loginUserFromDB = async (payload: ILoginData) => {
   if (!isExistUser.verified) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      "Please verify your account, then try to login again"
+      "Please verify your account, then try to login again",
     );
   }
 
@@ -61,8 +62,17 @@ const forgetPasswordToDB = async (email: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
 
-  //send mail
+  // Generate 6-digit OTP
   const otp = generateOTP();
+
+  // Store/overwrite in Redis under otp:${email} with 3-minute TTL (180 seconds)
+  await redisService.post({
+    key: `otp:${email}`,
+    value: otp,
+    expiration: 180,
+  });
+
+  // Send mail
   const value = {
     otp,
     email: isExistUser.email,
@@ -70,19 +80,12 @@ const forgetPasswordToDB = async (email: string) => {
 
   const forgetPassword = emailTemplate.resetPassword(value);
   emailHelper.sendEmail(forgetPassword);
-
-  //save to DB
-  const authentication = {
-    oneTimeCode: otp,
-    expireAt: new Date(Date.now() + 3 * 60000),
-  };
-  await User.findOneAndUpdate({ email }, { $set: { authentication } });
 };
 
-//verify email
+//verify email / OTP
 const verifyEmailToDB = async (payload: IVerifyEmail) => {
   const { email, oneTimeCode } = payload;
-  const isExistUser = await User.findOne({ email }).select("+authentication");
+  const isExistUser = await User.findOne({ email });
   if (!isExistUser) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
@@ -90,21 +93,25 @@ const verifyEmailToDB = async (payload: IVerifyEmail) => {
   if (!oneTimeCode) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      "Please give the otp, check your email we send a code"
+      "Please give the otp, check your email we send a code",
     );
   }
 
-  if (isExistUser.authentication?.oneTimeCode !== oneTimeCode) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "You provided wrong otp");
+  // Query Redis for cached OTP
+  const cachedOtp = await redisService.get(`otp:${email}`);
+
+  // If key does not exist or has expired
+  if (!cachedOtp) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid or expired OTP");
   }
 
-  const date = new Date();
-  if (date > isExistUser.authentication?.expireAt) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      "Otp already expired, Please try again"
-    );
+  // If provided OTP does not match
+  if (String(cachedOtp) !== String(oneTimeCode)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid OTP provided");
   }
+
+  // Immediately delete key from Redis to prevent replay attacks
+  await redisService.del(`otp:${email}`);
 
   let message;
   let data;
@@ -112,7 +119,7 @@ const verifyEmailToDB = async (payload: IVerifyEmail) => {
   if (!isExistUser.verified) {
     await User.findOneAndUpdate(
       { _id: isExistUser._id },
-      { verified: true, authentication: { oneTimeCode: null, expireAt: null } }
+      { verified: true, authentication: { oneTimeCode: null, expireAt: null } },
     );
     message = "Email verify successfully";
   } else {
@@ -124,10 +131,10 @@ const verifyEmailToDB = async (payload: IVerifyEmail) => {
           oneTimeCode: null,
           expireAt: null,
         },
-      }
+      },
     );
 
-    //create token ;
+    //create token
     const createToken = cryptoToken();
     await ResetToken.create({
       user: isExistUser._id,
@@ -144,7 +151,7 @@ const verifyEmailToDB = async (payload: IVerifyEmail) => {
 //forget password
 const resetPasswordToDB = async (
   token: string,
-  payload: IAuthResetPassword
+  payload: IAuthResetPassword,
 ) => {
   const { newPassword, confirmPassword } = payload;
 
@@ -154,23 +161,14 @@ const resetPasswordToDB = async (
     throw new ApiError(StatusCodes.UNAUTHORIZED, "You are not authorized");
   }
 
-  //user permission check
-  const isExistUser = await User.findById(isExistToken.user).select(
-    "+authentication"
-  );
-  if (!isExistUser?.authentication?.isResetPassword) {
-    throw new ApiError(
-      StatusCodes.UNAUTHORIZED,
-      "You don't have permission to change the password. Please click again to 'Forgot Password'"
-    );
-  }
-
+  // need to set otp in redis
+   
   //validity check
   const isValid = await ResetToken.isExpireToken(token);
   if (!isValid) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      "Token expired, Please click again to the forget password"
+      "Token expired, Please click again to the forget password",
     );
   }
 
@@ -178,13 +176,13 @@ const resetPasswordToDB = async (
   if (newPassword !== confirmPassword) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      "New password and Confirm password doesn't match!"
+      "New password and Confirm password doesn't match!",
     );
   }
 
   const hashPassword = await bcrypt.hash(
     newPassword,
-    Number(config.bcrypt_salt_rounds)
+    Number(config.bcrypt_salt_rounds),
   );
 
   const updateData = {
@@ -201,7 +199,7 @@ const resetPasswordToDB = async (
 
 const changePasswordToDB = async (
   user: JwtPayload,
-  payload: IChangePassword
+  payload: IChangePassword,
 ) => {
   const { currentPassword, newPassword, confirmPassword } = payload;
   const isExistUser = await User.findById(user.id).select("+password");
@@ -221,7 +219,7 @@ const changePasswordToDB = async (
   if (currentPassword === newPassword) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      "Please give different password from current password"
+      "Please give different password from current password",
     );
   }
 
@@ -229,14 +227,14 @@ const changePasswordToDB = async (
   if (newPassword !== confirmPassword) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      "Password and Confirm password doesn't matched"
+      "Password and Confirm password doesn't matched",
     );
   }
 
   //hash password
   const hashPassword = await bcrypt.hash(
     newPassword,
-    Number(config.bcrypt_salt_rounds)
+    Number(config.bcrypt_salt_rounds),
   );
 
   const updateData = {
@@ -252,9 +250,7 @@ const newAccessTokenToUser = async (token: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Token is required!");
   }
 
-  const verifyUser = jwtHelper.verifyToken(
-    token,
-  );
+  const verifyUser = jwtHelper.verifyToken(token);
 
   const isExistUser = await User.findById(verifyUser?.id);
   if (!isExistUser) {
@@ -270,42 +266,39 @@ const newAccessTokenToUser = async (token: string) => {
 };
 
 const resendVerificationEmailToDB = async (email: string) => {
-  // Find the user by ID
-  const existingUser: any = await User.findOne({ email: email }).lean();
+  // Find the user by email
+  const existingUser: any = await User.findOne({ email }).lean();
 
   if (!existingUser) {
     throw new ApiError(
       StatusCodes.NOT_FOUND,
-      "User with this email does not exist!"
+      "User with this email does not exist!",
     );
   }
 
-  if (existingUser?.isVerified) {
+  if (existingUser?.verified) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "User is already verified!");
   }
 
-  // Generate OTP and prepare email
+  // Generate 6-digit OTP
   const otp = generateOTP();
+
+  // Store/overwrite in Redis under otp:${email} with 3-minute TTL (180 seconds)
+  await redisService.post({
+    key: `otp:${email}`,
+    value: otp,
+    expiration: 180,
+  });
+
+  // Prepare and send email
   const emailValues = {
-    name: existingUser.firstName,
+    name: existingUser.name || "User",
     otp,
     email: existingUser.email,
   };
 
   const accountEmailTemplate = emailTemplate.createAccount(emailValues);
   emailHelper.sendEmail(accountEmailTemplate);
-
-  // Update user with authentication details
-  const authentication = {
-    oneTimeCode: otp,
-    expireAt: new Date(Date.now() + 3 * 60000),
-  };
-
-  await User.findOneAndUpdate(
-    { email: email },
-    { $set: { authentication } },
-    { new: true }
-  );
 };
 
 // social authentication
@@ -389,6 +382,7 @@ export const AuthService = {
   changePasswordToDB,
   newAccessTokenToUser,
   resendVerificationEmailToDB,
+  resendOTP: resendVerificationEmailToDB,
   // socialLoginFromDB,
   deleteUserFromDB,
 };

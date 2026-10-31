@@ -1,18 +1,8 @@
 import { Model, Types } from "mongoose";
 import { USER_ROLES } from "../../../enums/user";
 
-interface IStripeAccountInfo {
-  status: string;
-  stripeAccountId: string;
-  externalAccountId: string;
-  currency: string;
-}
 
-interface IAuthenticationProps {
-  isResetPassword: boolean;
-  oneTimeCode: number;
-  expireAt: Date;
-}
+
 interface ILicenseDetails {
   licenseNumber: number;
   expireDate: string;
@@ -35,9 +25,8 @@ export type IUser = {
   country?: string;
   city?: string;
   verified: boolean;
+  gender:"male" | "female" | "other";
   drivingDetails?: ILicenseDetails;
-  authentication?: IAuthenticationProps;
-  accountInformation?: IStripeAccountInfo;
 };
 
 export type UserModal = {

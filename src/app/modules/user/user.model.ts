@@ -69,6 +69,11 @@ const userSchema = new Schema<IUser, UserModal>(
       enum: ["email", "google"],
       required: true,
     },
+    gender: {
+      type: String,
+      enum: ["male", "female", "other"],
+      required: false,
+    },
     drivingDetails: {
       licenseNumber: {
         type: Number,
@@ -91,42 +96,10 @@ const userSchema = new Schema<IUser, UserModal>(
       type: Boolean,
       default: false,
     },
-    authentication: {
-      type: {
-        isResetPassword: {
-          type: Boolean,
-          default: false,
-        },
-        oneTimeCode: {
-          type: Number,
-          default: null,
-        },
-        expireAt: {
-          type: Date,
-          default: null,
-        },
-      },
-      select: 0,
-    },
-    accountInformation: {
-      status: {
-        type: Boolean,
-        default: false,
-      },
-      stripeAccountId: {
-        type: String,
-      },
-      externalAccountId: {
-        type: String,
-      },
-      currency: {
-        type: String,
-      },
-    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 //exist user check
@@ -149,7 +122,7 @@ userSchema.statics.isAccountCreated = async (id: string) => {
 //is match password
 userSchema.statics.isMatchPassword = async (
   password: string,
-  hashPassword: string
+  hashPassword: string,
 ): Promise<boolean> => {
   return await bcrypt.compare(password, hashPassword);
 };
@@ -164,12 +137,12 @@ userSchema.pre("save", async function (next) {
   //password hash
   this.password = await bcrypt.hash(
     this.password,
-    Number(config.bcrypt_salt_rounds)
+    Number(config.bcrypt_salt_rounds),
   );
   // confirm password hash
   this.confirmPassword = await bcrypt.hash(
     this.confirmPassword,
-    Number(config.bcrypt_salt_rounds)
+    Number(config.bcrypt_salt_rounds),
   );
   next();
 });

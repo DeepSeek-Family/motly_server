@@ -8,36 +8,25 @@ import generateOTP from "../../../util/generateOTP";
 import { emailTemplate } from "../../../shared/emailTemplate";
 import { emailHelper } from "../../../helpers/emailHelper";
 import unlinkFile from "../../../shared/unlinkFile";
-
-const createAdminToDB = async (payload: IUser): Promise<IUser> => {
-  // check admin is exist or not;
-  const isExistAdmin = await User.findOne({ email: payload.email });
-  if (isExistAdmin) {
-    throw new ApiError(StatusCodes.CONFLICT, "This Email already taken");
-  }
-
-  // create admin to db
-  const createAdmin = await User.create(payload);
-  if (!createAdmin) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create Admin");
-  } else {
-    await User.findByIdAndUpdate(
-      { _id: createAdmin?._id },
-      { verified: true },
-      { new: true }
-    );
-  }
-
-  return createAdmin;
-};
+import redisService from "../../../redis/redis.service";
 
 const createUserToDB = async (payload: Partial<IUser>): Promise<IUser> => {
   const createUser = await User.create(payload);
   if (!createUser) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create user");
   }
-  //send email
+
+  // Generate 6-digit OTP
   const otp = generateOTP();
+
+  // Store OTP in Redis under otp:${email} with 3-minute (180 seconds) expiration
+  await redisService.post({
+    key: `otp:${createUser.email}`,
+    value: otp,
+    expiration: 180,
+  });
+
+  // Trigger email sending process
   const values = {
     name: createUser.name,
     otp: otp,
@@ -47,22 +36,11 @@ const createUserToDB = async (payload: Partial<IUser>): Promise<IUser> => {
   const createAccountTemplate = emailTemplate.createAccount(values);
   emailHelper.sendEmail(createAccountTemplate);
 
-  //save to DB
-  const authentication = {
-    oneTimeCode: otp,
-    expireAt: new Date(Date.now() + 3 * 60000),
-  };
-
-  await User.findOneAndUpdate(
-    { _id: createUser._id },
-    { $set: { authentication } }
-  );
-
   return createUser;
 };
 
 const getUserProfileFromDB = async (
-  user: JwtPayload
+  user: JwtPayload,
 ): Promise<Partial<IUser>> => {
   const { id } = user;
   const isExistUser: any = await User.isExistUserById(id);
@@ -74,7 +52,7 @@ const getUserProfileFromDB = async (
 
 const updateProfileToDB = async (
   user: JwtPayload,
-  payload: Partial<IUser>
+  payload: Partial<IUser>,
 ): Promise<Partial<IUser | null>> => {
   const { id } = user;
   const isExistUser = await User.isExistUserById(id);
@@ -97,5 +75,4 @@ export const UserService = {
   createUserToDB,
   getUserProfileFromDB,
   updateProfileToDB,
-  createAdminToDB,
 };

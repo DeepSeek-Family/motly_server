@@ -10,13 +10,13 @@ const router = express.Router();
 router.post(
   "/login",
   validateRequest(AuthValidation.createLoginZodSchema),
-  AuthController.loginUser
+  AuthController.loginUser,
 );
 
 router.post(
   "/forgot-password",
   validateRequest(AuthValidation.createForgetPasswordZodSchema),
-  AuthController.forgetPassword
+  AuthController.forgetPassword,
 );
 
 router.post("/refresh-token", AuthController.newAccessToken);
@@ -38,23 +38,21 @@ router.post(
     }
   },
   validateRequest(AuthValidation.createVerifyEmailZodSchema),
-  AuthController.verifyEmail
+  AuthController.verifyEmail,
 );
 
 router.post(
   "/reset-password",
   validateRequest(AuthValidation.createResetPasswordZodSchema),
-  AuthController.resetPassword
+  AuthController.resetPassword,
 );
 
 router.post(
   "/change-password",
   auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.USER),
   validateRequest(AuthValidation.createChangePasswordZodSchema),
-  AuthController.changePassword
+  AuthController.changePassword,
 );
-
-router.post("/resend-otp", AuthController.resendVerificationEmail);
 
 // router.post(
 //     '/social-login',
@@ -64,7 +62,7 @@ router.post("/resend-otp", AuthController.resendVerificationEmail);
 router.delete(
   "/delete-account",
   auth(USER_ROLES.SUPER_ADMIN),
-  AuthController.deleteUser
+  AuthController.deleteUser,
 );
 
 // Google Auth Routes
