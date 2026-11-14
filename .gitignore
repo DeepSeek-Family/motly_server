@@ -14,7 +14,6 @@ yarn.lock
 createModuleStructure.js
 config.bat
 
-.env
 uploads
 docs
 rule.md/
