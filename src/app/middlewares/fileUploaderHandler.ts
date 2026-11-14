@@ -1,11 +1,11 @@
-import { Request } from "express";
+import { RequestHandler } from "express";
 import fs from "fs";
 import { StatusCodes } from "http-status-codes";
 import multer, { FileFilterCallback } from "multer";
 import path from "path";
 import ApiError from "../../errors/ApiErrors";
 
-const fileUploadHandler = () => {
+const fileUploadHandler = (): RequestHandler => {
   //create upload folder
   const baseUploadDir = path.join(process.cwd(), "uploads");
   if (!fs.existsSync(baseUploadDir)) {
@@ -54,9 +54,8 @@ const fileUploadHandler = () => {
     },
   });
 
-  //file filter
-  const filterFilter = (_req: Request, file: any, cb: FileFilterCallback) => {
-    // console.log("file handler",file)
+  //file filter — keep req loose to avoid @types/express v4/v5 mismatch
+  const filterFilter = (_req: any, file: Express.Multer.File, cb: FileFilterCallback) => {
     if (
       file.fieldname === "image" ||
       file.fieldname === "carImages" ||
@@ -86,7 +85,7 @@ const fileUploadHandler = () => {
     { name: "carImages", maxCount: 7 },
     { name: "icon", maxCount: 1 },
   ]);
-  return upload;
+  return upload as unknown as RequestHandler;
 };
 
 export default fileUploadHandler;

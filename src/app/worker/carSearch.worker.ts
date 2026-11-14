@@ -23,9 +23,10 @@ const carSearchWorker = new Worker(
 
     try {
       const result = await CarAmadeusService.processSearchJob(body);
+      const offers = (result as { offers?: unknown }).offers;
       console.log(
         `✅ Car search job ${job.id} done — offers=${
-          Array.isArray(result?.offers) ? result.offers.length : 0
+          Array.isArray(offers) ? offers.length : 0
         }`
       );
       return result;

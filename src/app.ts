@@ -38,7 +38,7 @@ app.use(
     resave: false,
     saveUninitialized: true,
     cookie: { secure: false }, // Secure should be true in production with HTTPS
-  })
+  }) as express.RequestHandler
 );
 
 // Initialize Passport

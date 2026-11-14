@@ -182,12 +182,12 @@ const checkoutReturn = catchAsync(async (req: Request, res: Response) => {
       const dest = offerId
         ? `${webOrigin}/checkout/${encodeURIComponent(offerId)}?payment=success&session_id=${encodeURIComponent(sessionId)}&step=2`
         : `${webOrigin}/my-booking?payment=success`;
-      return res.redirect(StatusCodes.FOUND, dest);
+      return res.redirect(StatusCodes.MOVED_TEMPORARILY, dest);
     }
     const dest = offerId
       ? `${webOrigin}/view-details/${encodeURIComponent(offerId)}?payment=failed`
       : `${webOrigin}/car-details?payment=failed`;
-    return res.redirect(StatusCodes.FOUND, dest);
+    return res.redirect(StatusCodes.MOVED_TEMPORARILY, dest);
   }
 
   // App WebView intercepts this URL (path contains checkout-return).

@@ -27,6 +27,8 @@ export type ICarPayment = {
   bookingLedgerId?: Schema.Types.ObjectId | string;
   refundId?: string;
   metadata?: Record<string, unknown>;
+  createdAt?: Date;
+  updatedAt?: Date;
 };
 
 const carPaymentSchema = new Schema<ICarPayment>(
