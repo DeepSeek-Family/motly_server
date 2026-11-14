@@ -149,22 +149,37 @@ const verifyEmailToDB = async (payload: IVerifyEmail) => {
 };
 
 //forget password
+const normalizeResetToken = (authHeader?: string) => {
+  if (!authHeader) {
+    return "";
+  }
+  const value = authHeader.trim();
+  if (value.toLowerCase().startsWith("bearer ")) {
+    return value.slice(7).trim();
+  }
+  return value;
+};
+
 const resetPasswordToDB = async (
   token: string,
   payload: IAuthResetPassword,
 ) => {
   const { newPassword, confirmPassword } = payload;
+  const resetToken = normalizeResetToken(token);
 
-  //isExist token
-  const isExistToken = await ResetToken.isExistToken(token);
+  if (!resetToken) {
+    throw new ApiError(
+      StatusCodes.UNAUTHORIZED,
+      "Reset token is required in Authorization header"
+    );
+  }
+
+  const isExistToken = await ResetToken.isExistToken(resetToken);
   if (!isExistToken) {
     throw new ApiError(StatusCodes.UNAUTHORIZED, "You are not authorized");
   }
 
-  // need to set otp in redis
-   
-  //validity check
-  const isValid = await ResetToken.isExpireToken(token);
+  const isValid = await ResetToken.isExpireToken(resetToken);
   if (!isValid) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -172,7 +187,6 @@ const resetPasswordToDB = async (
     );
   }
 
-  //check password
   if (newPassword !== confirmPassword) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -185,16 +199,19 @@ const resetPasswordToDB = async (
     Number(config.bcrypt_salt_rounds),
   );
 
-  const updateData = {
-    password: hashPassword,
-    authentication: {
-      isResetPassword: false,
+  await User.findOneAndUpdate(
+    { _id: isExistToken.user },
+    {
+      password: hashPassword,
+      authentication: {
+        isResetPassword: false,
+      },
     },
-  };
+    { new: true }
+  );
 
-  await User.findOneAndUpdate({ _id: isExistToken.user }, updateData, {
-    new: true,
-  });
+  // One-time use: prevent replay with the same reset token.
+  await ResetToken.deleteMany({ user: isExistToken.user });
 };
 
 const changePasswordToDB = async (
@@ -245,23 +262,30 @@ const changePasswordToDB = async (
 };
 
 const newAccessTokenToUser = async (token: string) => {
-  // Check if the token is provided
   if (!token) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Token is required!");
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Refresh token is required!");
   }
 
-  const verifyUser = jwtHelper.verifyToken(token);
+  // Refresh token must be verified with refresh secret (not access secret).
+  const verifyUser = jwtHelper.verifyRefreshToken(token);
 
   const isExistUser = await User.findById(verifyUser?.id);
   if (!isExistUser) {
     throw new ApiError(StatusCodes.UNAUTHORIZED, "Unauthorized access");
   }
 
-  //create token
+  if (!isExistUser.verified) {
+    throw new ApiError(
+      StatusCodes.UNAUTHORIZED,
+      "Please verify your account, then try again"
+    );
+  }
+
   const accessToken = jwtHelper.createToken({
     id: isExistUser._id.toString(),
     role: isExistUser.role,
   });
+
   return { accessToken };
 };
 

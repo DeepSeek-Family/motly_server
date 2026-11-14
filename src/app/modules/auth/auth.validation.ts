@@ -41,10 +41,26 @@ const createChangePasswordZodSchema = z.object({
     })
 });
 
+const createRefreshTokenZodSchema = z.object({
+    body: z.object({
+        token: z.string({ required_error: 'Refresh token is required' }).min(1),
+    }),
+});
+
+const createResendOtpZodSchema = z.object({
+    body: z.object({
+        email: z
+            .string({ required_error: 'Email is required' })
+            .email({ message: 'Invalid email address' }),
+    }),
+});
+
 export const AuthValidation = {
     createVerifyEmailZodSchema,
     createForgetPasswordZodSchema,
     createLoginZodSchema,
     createResetPasswordZodSchema,
     createChangePasswordZodSchema,
+    createRefreshTokenZodSchema,
+    createResendOtpZodSchema,
 };

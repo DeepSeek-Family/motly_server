@@ -19,23 +19,30 @@ router.post(
   AuthController.forgetPassword,
 );
 
-router.post("/refresh-token", AuthController.newAccessToken);
+router.post(
+  "/refresh-token",
+  validateRequest(AuthValidation.createRefreshTokenZodSchema),
+  AuthController.newAccessToken,
+);
 
-router.post("/resend-otp", AuthController.resendVerificationEmail);
+router.post(
+  "/resend-otp",
+  validateRequest(AuthValidation.createResendOtpZodSchema),
+  AuthController.resendVerificationEmail,
+);
 
 router.post(
   "/verify-email",
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { email, oneTimeCode } = req.body;
-
-      req.body = { email, oneTimeCode: Number(oneTimeCode) };
-      next();
-    } catch (error) {
-      return res
-        .status(500)
-        .json({ message: "Failed to convert string to number" });
-    }
+  (req: Request, _res: Response, next: NextFunction) => {
+    const { email, oneTimeCode } = req.body || {};
+    req.body = {
+      email,
+      oneTimeCode:
+        oneTimeCode === undefined || oneTimeCode === null
+          ? oneTimeCode
+          : Number(oneTimeCode),
+    };
+    next();
   },
   validateRequest(AuthValidation.createVerifyEmailZodSchema),
   AuthController.verifyEmail,
@@ -49,7 +56,7 @@ router.post(
 
 router.post(
   "/change-password",
-  auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.USER),
+  auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.USER, USER_ROLES.AGENCY),
   validateRequest(AuthValidation.createChangePasswordZodSchema),
   AuthController.changePassword,
 );

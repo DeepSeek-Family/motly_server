@@ -1,8 +1,13 @@
-import jwt, { Secret } from "jsonwebtoken";
+import jwt, { Secret, SignOptions } from "jsonwebtoken";
 import config from "../config";
 import { v4 as uuidv4 } from "uuid";
 
 const createToken = (user: { id: string; role: string }) => {
+  const options: SignOptions = {
+    expiresIn: config.jwt.jwt_expire_in as SignOptions["expiresIn"],
+    algorithm: "HS256",
+  };
+
   return jwt.sign(
     {
       id: user.id,
@@ -10,18 +15,18 @@ const createToken = (user: { id: string; role: string }) => {
       iss: config.jwt.issuer,
       aud: config.jwt.audience,
       tokenVersion: config.jwt.tokenVersion,
-      jti: uuidv4(), // for logout
+      jti: uuidv4(),
     },
     config.jwt.jwt_secret as Secret,
-    {
-      expiresIn: config.jwt.jwt_expire_in,
-      algorithm: "HS256" as const,
-    }
+    options
   );
 };
 
-// Refresh Token create
 const createRefreshToken = (userId: string) => {
+  const options: SignOptions = {
+    expiresIn: config.jwt.jwtRefreshExpiresIn as SignOptions["expiresIn"],
+  };
+
   return jwt.sign(
     {
       id: userId,
@@ -30,9 +35,7 @@ const createRefreshToken = (userId: string) => {
       aud: config.jwt.audience,
     },
     config.jwt.jwtRefreshSecret as Secret,
-    {
-      expiresIn: config.jwt.jwtRefreshExpiresIn,
-    }
+    options
   );
 };
 

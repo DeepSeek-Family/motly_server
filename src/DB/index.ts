@@ -3,6 +3,7 @@ import { User } from "../app/modules/user/user.model";
 import config from "../config";
 import { USER_ROLES } from "../enums/user";
 import { logger } from "../shared/logger";
+import { seedPartners } from "./seedPartners";
 
 const superUser = {
   name: "SUPER ADMIN",
@@ -23,5 +24,7 @@ const seedSuperAdmin = async () => {
     await User.create(superUser);
     logger.info(colors.green("✔ Super admin created successfully!"));
   }
+
+  await seedPartners();
 };
 export default seedSuperAdmin;

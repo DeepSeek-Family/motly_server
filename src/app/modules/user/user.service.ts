@@ -11,6 +11,17 @@ import unlinkFile from "../../../shared/unlinkFile";
 import redisService from "../../../redis/redis.service";
 
 const createUserToDB = async (payload: Partial<IUser>): Promise<IUser> => {
+  if (
+    payload.password &&
+    payload.confirmPassword &&
+    payload.password !== payload.confirmPassword
+  ) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "Password and Confirm password doesn't match!"
+    );
+  }
+
   const createUser = await User.create(payload);
   if (!createUser) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create user");

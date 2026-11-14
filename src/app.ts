@@ -5,6 +5,7 @@ import { Morgan } from "./shared/morgan";
 import globalErrorHandler from "./app/middlewares/globalErrorHandler";
 import session from "express-session";
 import router from "./app/routes";
+import handleStripeWebhook from "./helpers/handleStripeWebhook";
 const app = express();
 
 // morgan
@@ -13,6 +14,16 @@ app.use(Morgan.errorHandler);
 
 //body parser
 app.use(cors());
+
+// Stripe webhooks require the raw body for signature verification.
+app.post(
+  "/api/v1/stripe/webhook",
+  express.raw({ type: "application/json" }),
+  (req, res, next) => {
+    Promise.resolve(handleStripeWebhook(req, res)).catch(next);
+  }
+);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

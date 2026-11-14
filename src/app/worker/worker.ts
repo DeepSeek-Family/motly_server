@@ -1,6 +1,8 @@
 import { Worker } from "bullmq";
 import { connectionBullMQ } from "../../config/bullMQ.config";
 import { emailHelper } from "../../helpers/emailHelper";
+import "./carSearch.worker";
+
 const worker = new Worker(
   "emailQueue",
   async (job) => {

@@ -18,3 +18,19 @@ export const emailQueue = new Queue("emailQueue", {
     removeOnFail: false,
   },
 });
+
+/** Amadeus car offer search — slow upstream; FE should poll job status. */
+export const carSearchQueue = new Queue("carSearchQueue", {
+  connection: connectionBullMQ,
+  defaultJobOptions: {
+    attempts: 2,
+    backoff: { type: "exponential", delay: 3000 },
+    removeOnComplete: {
+      age: 600,
+      count: 200,
+    },
+    removeOnFail: {
+      age: 3600,
+    },
+  },
+});

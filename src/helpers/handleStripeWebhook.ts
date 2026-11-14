@@ -56,6 +56,25 @@ const handleStripeWebhook = async (req: Request, res: Response) => {
                 await handleAccountUpdatedEvent(data as Stripe.Account);
                 break;
 
+            case 'checkout.session.completed':
+            case 'checkout.session.async_payment_succeeded':
+            case 'checkout.session.async_payment_failed':
+            case 'checkout.session.expired':
+            case 'payment_intent.succeeded':
+            case 'payment_intent.payment_failed':
+            case 'payment_intent.canceled':
+            case 'payment_intent.processing':
+            case 'charge.refunded':
+            case 'refund.created':
+            case 'refund.updated':
+            case 'charge.refund.updated': {
+                const { CarPaymentService } = await import(
+                    '../app/modules/car/carPayment.service'
+                );
+                await CarPaymentService.applyStripeWebhookEvent(event);
+                break;
+            }
+
             default:
                 logger.warn(colors.bgGreen.bold(`Unhandled event type: ${eventType}`));
         }
