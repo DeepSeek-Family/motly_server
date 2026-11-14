@@ -32,14 +32,14 @@ app.use(express.static("uploads"));
 app.use(express.static("public"));
 
 // Session middleware (must be before passport initialization)
-app.use(
-  session({
-    secret: "your_secret_key",
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false }, // Secure should be true in production with HTTPS
-  }) as express.RequestHandler
-);
+// Cast via any: @types/express-session nests @types/express@5 while app uses v4.
+const sessionMiddleware = session({
+  secret: "your_secret_key",
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false }, // Secure should be true in production with HTTPS
+}) as any;
+app.use(sessionMiddleware);
 
 // Initialize Passport
 // app.use(passport.initialize());
