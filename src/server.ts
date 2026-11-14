@@ -6,8 +6,8 @@ import colors from "colors";
 import { socketHelper } from "./helpers/socketHelper";
 import { Server } from "socket.io";
 import seedSuperAdmin from "./DB";
-import "../src/app/worker/worker";
-import 'dotenv/config';
+import "./app/worker/worker";
+import "dotenv/config";
 
 
 //uncaught exception
